@@ -46,10 +46,26 @@ if uploaded_file is not None:
 
         st.info(f"📂 Uploaded file saved as: `{uploaded_filename}`")
 
-        # Parameters for user input (now under upload section)
+        # Parameters for user input (with tooltips)
         st.subheader("⚙️ Settings")
-        epsilon = st.slider("Privacy parameter (epsilon)", 0.1, 5.0, 1.0)
-        k = st.slider("Max parents in Bayesian Network (k)", 1, 5, 2)
+        epsilon = st.slider(
+            "Privacy parameter (epsilon)",
+            0.1, 5.0, 1.0,
+            help=(
+                "Controls the privacy-utility tradeoff using Differential Privacy.\n"
+                "Lower epsilon → stronger privacy, more noise, less accurate synthetic data.\n"
+                "Higher epsilon → weaker privacy, less noise, more accurate synthetic data."
+            )
+        )
+        k = st.slider(
+            "Max parents in Bayesian Network (k)",
+            1, 5, 2,
+            help=(
+                "Maximum number of parent attributes in the Bayesian Network.\n"
+                "Lower k → simpler model, faster generation, may miss complex relationships.\n"
+                "Higher k → more complex model, captures richer dependencies, takes longer to compute."
+            )
+        )
         n = st.number_input("Number of synthetic rows", 100, 10000, 2500)
 
         if st.button("🚀 Generate Synthetic Data"):
