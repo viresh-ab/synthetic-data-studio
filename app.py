@@ -9,6 +9,7 @@ import time
 import random
 import string
 import os
+from scipy.stats import wasserstein_distance
 
 # Ensure compatibility with DataSynthesizer
 builtins.np = np
@@ -97,7 +98,41 @@ if uploaded_file is not None:
             with st.expander("🔍 Preview Synthetic Dataset", expanded=True):
                 st.dataframe(synthetic_df.head())
 
-            # Download button
+            # ===== Overall Accuracy Calculation =====
+            st.subheader("📊 Overall Accuracy Comparison")
+
+            numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+            categorical_cols = df.select_dtypes(include='object').columns.tolist()
+
+            accuracy_scores = []
+
+            # Numeric columns: using Wasserstein distance
+            for col in numeric_cols:
+                try:
+                    dist = wasserstein_distance(df[col], synthetic_df[col])
+                    score = max(0, 1 - dist / (df[col].max() - df[col].min()))
+                    accuracy_scores.append(score)
+                except Exception:
+                    pass
+
+            # Categorical columns: using normalized frequency similarity
+            for col in categorical_cols:
+                try:
+                    real_counts = df[col].value_counts(normalize=True)
+                    synth_counts = synthetic_df[col].value_counts(normalize=True)
+                    combined = pd.concat([real_counts, synth_counts], axis=1).fillna(0)
+                    score = 1 - (combined.diff(axis=1).abs().sum(axis=1).mean() / 2)  # scaled 0-1
+                    accuracy_scores.append(score)
+                except Exception:
+                    pass
+
+            if accuracy_scores:
+                overall_accuracy = round(np.mean(accuracy_scores) * 100, 2)
+                st.metric("🌟 Overall Accuracy (%)", f"{overall_accuracy}%")
+            else:
+                st.info("No comparable columns found for accuracy calculation.")
+
+            # ===== Download Button =====
             csv_buffer = io.StringIO()
             synthetic_df.to_csv(csv_buffer, index=False)
             st.download_button(
