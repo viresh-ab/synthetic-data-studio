@@ -21,7 +21,7 @@ def random_code(length=5):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 # File uploader
-uploaded_file = st.file_uploader("Upload your CSV or CSV.GZ file", type=["csv", "gz"])
+uploaded_file = st.file_uploader("📂 Upload your CSV or CSV.GZ file", type=["csv", "gz"])
 
 if uploaded_file is not None:
     try:
@@ -46,11 +46,11 @@ if uploaded_file is not None:
 
         st.info(f"📂 Uploaded file saved as: `{uploaded_filename}`")
 
-        # Parameters for user input
-        st.sidebar.header("⚙️ Settings")
-        epsilon = st.sidebar.slider("Privacy parameter (epsilon)", 0.1, 5.0, 1.0)
-        k = st.sidebar.slider("Max parents in Bayesian Network (k)", 1, 5, 2)
-        n = st.sidebar.number_input("Number of synthetic rows", 100, 10000, 2500)
+        # Parameters for user input (now under upload section)
+        st.subheader("⚙️ Settings")
+        epsilon = st.slider("Privacy parameter (epsilon)", 0.1, 5.0, 1.0)
+        k = st.slider("Max parents in Bayesian Network (k)", 1, 5, 2)
+        n = st.number_input("Number of synthetic rows", 100, 10000, 2500)
 
         if st.button("🚀 Generate Synthetic Data"):
             with st.spinner("🔄 Generating dataset description..."):
