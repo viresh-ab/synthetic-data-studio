@@ -11,6 +11,14 @@ import string
 import os
 from scipy.stats import wasserstein_distance
 
+hide_st_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_st_style, unsafe_allow_html=True)
 # Ensure compatibility with DataSynthesizer
 builtins.np = np
 
