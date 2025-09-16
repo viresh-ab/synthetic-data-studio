@@ -13,6 +13,7 @@ import os
 # Ensure compatibility with DataSynthesizer
 builtins.np = np
 
+# Page config
 st.set_page_config(page_title="Synthetic Data Generator", page_icon="📊", layout="wide")
 st.title("📊 Synthetic Data Studio (DataSynthesizer)")
 
@@ -20,8 +21,12 @@ st.title("📊 Synthetic Data Studio (DataSynthesizer)")
 def random_code(length=5):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-# File uploader
-uploaded_file = st.file_uploader("📂 Upload your CSV or CSV.GZ file", type=["csv", "gz"])
+# ===== Upload Section =====
+st.subheader("📂 Upload Your Dataset")
+uploaded_file = st.file_uploader(
+    "Upload CSV or CSV.GZ file",
+    type=["csv", "gz"]
+)
 
 if uploaded_file is not None:
     try:
@@ -33,56 +38,48 @@ if uploaded_file is not None:
 
         st.success(f"✅ File uploaded successfully! Shape: {df.shape}")
 
-        st.write("### 🔍 Sample of Uploaded Dataset")
-        st.dataframe(df.head())
+        # Show uploaded dataset in expandable section
+        with st.expander("🔍 Preview Uploaded Dataset", expanded=True):
+            st.dataframe(df.head())
 
-        # Generate unique code for this run
+        # Generate unique code for filenames
         code = random_code()
-        
-        # Save uploaded file locally with code
         base_name = os.path.splitext(uploaded_file.name)[0]
         uploaded_filename = f"{base_name}_{code}.csv"
         df.to_csv(uploaded_filename, index=False)
-
         st.info(f"📂 Uploaded file saved as: `{uploaded_filename}`")
 
-        # Parameters for user input (with tooltips)
-        st.subheader("⚙️ Settings")
-        epsilon = st.slider(
-            "Privacy parameter (epsilon)",
-            0.1, 5.0, 1.0,
-            help=(
-                "Controls the privacy-utility tradeoff using Differential Privacy.\n"
-                "Lower epsilon → stronger privacy, more noise, less accurate synthetic data.\n"
-                "Higher epsilon → weaker privacy, less noise, more accurate synthetic data."
-            )
-        )
-        k = st.slider(
-            "Max parents in Bayesian Network (k)",
-            1, 5, 2,
-            help=(
-                "Maximum number of parent attributes in the Bayesian Network.\n"
-                "Lower k → simpler model, faster generation, may miss complex relationships.\n"
-                "Higher k → more complex model, captures richer dependencies, takes longer to compute."
-            )
-        )
-        n = st.number_input("Number of synthetic rows", 100, 10000, 2500)
+        # ===== Backend Settings (hidden from user) =====
+        epsilon = 1.0  # Ideal privacy parameter
+        k = 2          # Ideal max parents in Bayesian Network
 
+        # ===== User Setting =====
+        with st.expander("⚙️ Settings", expanded=True):
+            n = st.number_input(
+                "Number of synthetic rows",
+                min_value=100,
+                max_value=100000,
+                value=2500,
+                help="Set the number of synthetic rows to generate (max 100,000)."
+            )
+
+        # ===== Generate Button =====
         if st.button("🚀 Generate Synthetic Data"):
+            # Dataset description
             with st.spinner("🔄 Generating dataset description..."):
                 describer = DataDescriber()
                 describer.describe_dataset_in_correlated_attribute_mode(
                     dataset_file=uploaded_filename,
                     epsilon=epsilon,
                     k=k,
-                    attribute_to_is_categorical={}, 
+                    attribute_to_is_categorical={},
                     attribute_to_is_candidate_key={}
                 )
                 describer.save_dataset_description_to_file("data_description.json")
                 time.sleep(1)
-
             st.success("✅ Dataset description created")
 
+            # Generate synthetic dataset
             with st.spinner("🔄 Generating synthetic dataset..."):
                 generator = DataGenerator()
                 generator.generate_dataset_in_correlated_attribute_mode(
@@ -93,13 +90,12 @@ if uploaded_file is not None:
                 generator.save_synthetic_data(synthetic_filename)
                 time.sleep(1)
 
-            # Load synthetic dataset
+            # Load and show synthetic dataset
             synthetic_df = pd.read_csv(synthetic_filename)
-
             st.success(f"🎉 Synthetic dataset generated successfully! (Saved as `{synthetic_filename}`)")
 
-            st.write("### 🔍 Sample of Synthetic Dataset")
-            st.dataframe(synthetic_df.head())
+            with st.expander("🔍 Preview Synthetic Dataset", expanded=True):
+                st.dataframe(synthetic_df.head())
 
             # Download button
             csv_buffer = io.StringIO()
